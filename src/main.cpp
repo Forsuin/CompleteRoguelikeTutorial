@@ -1,82 +1,41 @@
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#endif  // __EMSCRIPTEN__
-#include <SDL.h>
+#include <format>
 
-#include <cstdlib>
-#include <filesystem>
-#include <iostream>
-#include <libtcod.hpp>
+#include "libtcod.hpp"
 
-#if defined(_MSC_VER)
-#pragma warning(disable : 4297)  // Allow "throw" in main().  Letting the compiler handle termination.
-#endif
-
-/// Return the data directory.
-auto get_data_dir() -> std::filesystem::path {
-  static auto root_directory = std::filesystem::path{"."};  // Begin at the working directory.
-  while (!std::filesystem::exists(root_directory / "data")) {
-    // If the current working directory is missing the data dir then it will assume it exists in any parent directory.
-    root_directory /= "..";
-    if (!std::filesystem::exists(root_directory)) {
-      throw std::runtime_error("Could not find the data directory.");
-    }
-  }
-  return root_directory / "data";
-};
-
-static tcod::Console g_console;  // The global console object.
-static tcod::Context g_context;  // The global libtcod context.
-
-/// Game loop.
-void main_loop() {
-  // Rendering.
-  g_console.clear();
-  tcod::print(g_console, {0, 0}, "Hello World", TCOD_white, std::nullopt);
-  g_context.present(g_console);
-
-  // Handle input.
-  SDL_Event event;
-#ifndef __EMSCRIPTEN__
-  // Block until events exist.  This conserves resources well but isn't compatible with animations or Emscripten.
-  SDL_WaitEvent(nullptr);
-#endif
-  while (SDL_PollEvent(&event)) {
-    switch (event.type) {
-      case SDL_QUIT:
-        std::exit(EXIT_SUCCESS);
-        break;
-    }
-  }
+template <typename... Args>
+void print(const std::string_view str_fmt, Args&&... args) {
+  fputs(std::vformat(str_fmt, std::make_format_args(args...)).c_str(), stdout);
 }
 
-/// Main program entry point.
-int main(int argc, char** argv) {
-  try {
-    auto params = TCOD_ContextParams{};
-    params.tcod_version = TCOD_COMPILEDVERSION;
-    params.argc = argc;
-    params.argv = argv;
-    params.renderer_type = TCOD_RENDERER_SDL2;
-    params.vsync = 1;
-    params.sdl_window_flags = SDL_WINDOW_RESIZABLE;
-    params.window_title = "Libtcod Template Project";
+int main() {
+  print("Hello World");
 
-    auto tileset = tcod::load_tilesheet(get_data_dir() / "dejavu16x16_gs_tc.png", {32, 8}, tcod::CHARMAP_TCOD);
-    params.tileset = tileset.get();
+  int playerX = 40, playerY = 25;
 
-    g_console = tcod::Console{80, 40};
-    params.console = g_console.get();
+  TCODConsole::initRoot(80, 50, "CompleteRoguelikeTutorial", false);
 
-    g_context = tcod::Context(params);
+  while (!TCODConsole::isWindowClosed()) {
+    TCOD_key_t key;
+    TCODSystem::checkForEvent(TCOD_EVENT_KEY_PRESS, &key, NULL);
 
-#ifdef __EMSCRIPTEN__
-    emscripten_set_main_loop(main_loop, 0, 0);
-#else
-    while (true) main_loop();
-#endif
-  } catch (const std::exception& exc) {
-    std::cerr << exc.what() << "\n";
-    throw;
+    switch (key.vk) {
+      case TCODK_UP:
+        playerY--;
+        break;
+      case TCODK_DOWN:
+        playerY++;
+        break;
+      case TCODK_LEFT:
+        playerX--;
+        break;
+      case TCODK_RIGHT:
+        playerX++;
+        break;
+    }
+
+    TCODConsole::root->clear();
+    TCODConsole::root->putChar(playerX, playerY, '@');
+    TCODConsole::flush();
   }
+  return 0;
 }

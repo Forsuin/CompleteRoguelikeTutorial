@@ -7,7 +7,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
 endif()
 
 project(
-    libtcod-vcpkg-template  # Project name, change this as needed.
+    CompleteRoguelikeTutorial  # Project name, change this as needed.
     LANGUAGES C CXX
 )
 
@@ -21,8 +21,8 @@ file(
 )
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
-# Ensure the C++17 standard is available.
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+# Ensure the C++20 standard is available.
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
 # Enforce UTF-8 encoding on MSVC.
 if (MSVC)
@@ -34,17 +34,6 @@ if (MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W4)
 else()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
-endif()
-
-if (EMSCRIPTEN)
-    # Attach data folder to Emscripten builds.
-    target_link_options(${PROJECT_NAME} PRIVATE --preload-file "${CMAKE_CURRENT_SOURCE_DIR}/data@data")
-    # Set output to html to generate preview pages, otherwise you'll have to make your own html.
-    set_target_properties(
-        ${PROJECT_NAME}
-        PROPERTIES
-            SUFFIX ".html"
-    )
 endif()
 
 set(BUILD_SHARED_LIBS ${WIN32})  # Builds libtcod has a shared library.
