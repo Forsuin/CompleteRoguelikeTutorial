@@ -1,10 +1,12 @@
 #include <filesystem>
 #include <iostream>
 #include <vector>
+#include <memory>
 
 #include "SDL.h"
 #include "libtcod.hpp"
 
+#include "engine.h"
 #include "entity.h"
 
 std::filesystem::path getDataDirectory() {
@@ -38,48 +40,22 @@ int main(int argc, char* argv[]) {
 
         auto context = tcod::Context(params);
 
-        std::vector<yarl::entity> entities;
+        std::vector<std::shared_ptr<yarl::entity>> entities;
 
-        yarl::entity player(console.get_width() / 2, console.get_height() / 2, "@", {255, 255, 255});
-        yarl::entity npc((console.get_width() / 2) - 5, (console.get_height() / 2), "@", {255, 255, 0});
+        auto player = std::make_shared<yarl::entity>(
+            console.get_width() / 2, console.get_height() / 2, "@", TCOD_ColorRGB(255, 255, 255));
+        auto npc = std::make_shared<yarl::entity>(
+            (console.get_width() / 2) - 5, (console.get_height() / 2), "@", TCOD_ColorRGB(255, 255, 0));
 
         entities.push_back(player);
         entities.push_back(npc);
 
-        while (true) {
-            TCOD_console_clear(console.get());
-            tcod::print(console, {player.x, player.y}, player.character, player.color, std::nullopt);
-            context.present(console);
+        yarl::Engine engine(entities, player);
 
-            SDL_Event event;
-            SDL_WaitEvent(nullptr);
-            while (SDL_PollEvent(&event)) {
-                switch (event.type) {
-                    case SDL_QUIT:
-                        std::exit(EXIT_SUCCESS);
-                        break;
-                    case SDL_KEYDOWN: {
-                        switch (event.key.keysym.sym) {
-                            case SDLK_UP: {
-                                player.move(0, -1);
-                                break;
-                            }
-                            case SDLK_DOWN: {
-                                player.move(0, 1);
-                                break;
-                            }
-                            case SDLK_LEFT: {
-                                player.move(-1, 0);
-                                break;
-                            }
-                            case SDLK_RIGHT: {
-                                player.move(1, 0);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+        while (true) {
+            engine.render(console, context);
+
+            engine.handleEvents();
         }
 
     } catch (const std::exception& exc) {
