@@ -15,24 +15,28 @@ void yarl::Engine::handleEvents() {
             case SDL_KEYDOWN: {
                 switch (event.key.keysym.sym) {
                     case SDLK_UP: {
-                        player->move(0, -1);
-                        std::cout << "UP" << std::endl;
-                        break;
+                        if (gameMap.tiles[gameMap.getIndex(player->x, player->y)] == yarl::Tiles::Floor) {
+                            player->move(0, -1);
+                            break;
+                        }
                     }
                     case SDLK_DOWN: {
-                        player->move(0, 1);
-                        std::cout << "DOWN" << std::endl;
-                        break;
+                        if (gameMap.tiles[gameMap.getIndex(player->x, player->y)] == yarl::Tiles::Floor) {
+                            player->move(0, 1);
+                            break;
+                        }
                     }
                     case SDLK_LEFT: {
-                        player->move(-1, 0);
-                        std::cout << "LEFT" << std::endl;
-                        break;
+                        if (gameMap.tiles[gameMap.getIndex(player->x, player->y)] == yarl::Tiles::Floor) {
+                            player->move(-1, 0);
+                            break;
+                        }
                     }
                     case SDLK_RIGHT: {
-                        player->move(1, 0);
-                        std::cout << "RIGHT" << std::endl;
-                        break;
+                        if (gameMap.tiles[gameMap.getIndex(player->x, player->y)] == yarl::Tiles::Floor) {
+                            player->move(1, 0);
+                            break;
+                        }
                     }
                 }
             }
@@ -43,8 +47,11 @@ void yarl::Engine::handleEvents() {
 void yarl::Engine::render(tcod::Console& console, tcod::Context& context) {
     TCOD_console_clear(console.get());
 
+    gameMap.render(console);
+
     for (auto const& entity : entities) {
-        tcod::print(console, {entity->x, entity->y}, entity->character, entity->color, std::nullopt);
+        console.at({entity->x, entity->y}).ch = entity->character;
+        console.at({entity->x, entity->y}).fg = entity->color;
     }
 
     context.present(console);

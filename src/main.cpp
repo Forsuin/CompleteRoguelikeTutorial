@@ -24,6 +24,12 @@ std::filesystem::path getDataDirectory() {
 
 int main(int argc, char* argv[]) {
     try {
+        int screenWidth = 80;
+        int screenHeight = 40;
+
+        int mapWidth = 80;
+        int mapHeight = 40;
+
         auto console = tcod::Console{80, 40};
         auto params = TCOD_ContextParams{};
 
@@ -42,15 +48,17 @@ int main(int argc, char* argv[]) {
 
         std::vector<std::shared_ptr<yarl::entity>> entities;
 
-        auto player = std::make_shared<yarl::entity>(
-            console.get_width() / 2, console.get_height() / 2, "@", TCOD_ColorRGB(255, 255, 255));
-        auto npc = std::make_shared<yarl::entity>(
-            (console.get_width() / 2) - 5, (console.get_height() / 2), "@", TCOD_ColorRGB(255, 255, 0));
+        auto player =
+            std::make_shared<yarl::entity>(screenWidth / 2, screenHeight / 2, '@', TCOD_ColorRGB(255, 255, 255));
+        auto npc =
+            std::make_shared<yarl::entity>((screenWidth / 2) - 5, (screenHeight / 2), '@', TCOD_ColorRGB(255, 255, 0));
 
         entities.push_back(player);
         entities.push_back(npc);
 
-        yarl::Engine engine(entities, player);
+        auto gameMap = yarl::GameMap(mapWidth, mapHeight);
+
+        yarl::Engine engine(entities, gameMap, player);
 
         while (true) {
             engine.render(console, context);
