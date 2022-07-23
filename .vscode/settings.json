@@ -101,5 +101,9 @@
     "xtree": "cpp",
     "xutility": "cpp",
     "fstream": "cpp"
-  }
+  },
+  "C_Cpp.errorSquiggles": "Disabled",
+  "cSpell.words": [
+    "yarl"
+  ]
 }

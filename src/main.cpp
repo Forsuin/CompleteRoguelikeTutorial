@@ -1,41 +1,89 @@
-#include <format>
+#include <filesystem>
+#include <iostream>
+#include <vector>
 
+#include "SDL.h"
 #include "libtcod.hpp"
 
-template <typename... Args>
-void print(const std::string_view str_fmt, Args&&... args) {
-  fputs(std::vformat(str_fmt, std::make_format_args(args...)).c_str(), stdout);
-}
+#include "entity.h"
 
-int main() {
-  print("Hello World");
+std::filesystem::path getDataDirectory() {
+    static auto root = std::filesystem::path{"."};
 
-  int playerX = 40, playerY = 25;
-
-  TCODConsole::initRoot(80, 50, "CompleteRoguelikeTutorial", false);
-
-  while (!TCODConsole::isWindowClosed()) {
-    TCOD_key_t key;
-    TCODSystem::checkForEvent(TCOD_EVENT_KEY_PRESS, &key, NULL);
-
-    switch (key.vk) {
-      case TCODK_UP:
-        playerY--;
-        break;
-      case TCODK_DOWN:
-        playerY++;
-        break;
-      case TCODK_LEFT:
-        playerX--;
-        break;
-      case TCODK_RIGHT:
-        playerX++;
-        break;
+    while (!std::filesystem::exists(root / "data")) {
+        root /= "..";
+        if (!std::filesystem::exists(root)) {
+            throw std::runtime_error("Could not find data directory");
+        }
     }
 
-    TCODConsole::root->clear();
-    TCODConsole::root->putChar(playerX, playerY, '@');
-    TCODConsole::flush();
-  }
-  return 0;
+    return root / "data";
+}
+
+int main(int argc, char* argv[]) {
+    try {
+        auto console = tcod::Console{80, 40};
+        auto params = TCOD_ContextParams{};
+
+        auto tileset = tcod::load_tilesheet(getDataDirectory() / "dejavu16x16_gs_tc.png", {32, 8}, tcod::CHARMAP_TCOD);
+
+        params.tcod_version = TCOD_COMPILEDVERSION;
+        params.tileset = tileset.get();
+        params.vsync = true;
+        params.sdl_window_flags = SDL_WINDOW_RESIZABLE;
+        params.window_title = "Complete Roguelike Tutorial";
+        params.argc = argc;
+        params.argv = argv;
+        params.console = console.get();
+
+        auto context = tcod::Context(params);
+
+        std::vector<yarl::entity> entities;
+
+        yarl::entity player(console.get_width() / 2, console.get_height() / 2, "@", {255, 255, 255});
+        yarl::entity npc((console.get_width() / 2) - 5, (console.get_height() / 2), "@", {255, 255, 0});
+
+        entities.push_back(player);
+        entities.push_back(npc);
+
+        while (true) {
+            TCOD_console_clear(console.get());
+            tcod::print(console, {player.x, player.y}, player.character, player.color, std::nullopt);
+            context.present(console);
+
+            SDL_Event event;
+            SDL_WaitEvent(nullptr);
+            while (SDL_PollEvent(&event)) {
+                switch (event.type) {
+                    case SDL_QUIT:
+                        std::exit(EXIT_SUCCESS);
+                        break;
+                    case SDL_KEYDOWN: {
+                        switch (event.key.keysym.sym) {
+                            case SDLK_UP: {
+                                player.move(0, -1);
+                                break;
+                            }
+                            case SDLK_DOWN: {
+                                player.move(0, 1);
+                                break;
+                            }
+                            case SDLK_LEFT: {
+                                player.move(-1, 0);
+                                break;
+                            }
+                            case SDLK_RIGHT: {
+                                player.move(1, 0);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    } catch (const std::exception& exc) {
+        std::cerr << exc.what() << "\n";
+        throw;
+    }
 }
